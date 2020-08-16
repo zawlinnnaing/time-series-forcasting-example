@@ -12,7 +12,7 @@ if __name__ == '__main__':
         val_df=data_processor.val_norm_df,
         input_width=24,
         label_width=24,
-        label_columns=['clicks', 'views'],
+        label_columns=['clicks'],
         shift=24)
     # window_generator.show_window_info()
 
@@ -23,12 +23,7 @@ if __name__ == '__main__':
 
     example_inputs, example_labels = window_generator.split_window(example_window)
 
-    window_generator.example = example_inputs, example_labels
-
-    print('All shapes are: (batch, time, features)')
-    print(f'Window shape: {example_window.shape}')
-    print(f'Inputs shape: {example_inputs.shape}')
-    print(f'labels shape: {example_labels.shape}')
+    print(window_generator.train.element_spec)
 
     # df_melt = data_processor.norm_df.melt(var_name='Column', value_name="Values")
     # print(df_melt)

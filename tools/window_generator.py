@@ -90,3 +90,28 @@ class WindowGenerator:
                 plt.legend()
 
             plt.xlabel('Time [h]')
+        plt.show()
+
+    def make_dataset(self, data):
+        data = np.array(data, dtype=np.float32)
+        dataset = tf.keras.preprocessing.timeseries_dataset_from_array(
+            data=data,
+            targets=None,
+            sequence_length=self.total_window_size,
+            batch_size=32,
+            shuffle=True,
+        )
+        dataset = dataset.map(self.split_window)
+        return dataset
+
+    @property
+    def train(self):
+        return self.make_dataset(self.train_df)
+
+    @property
+    def val(self):
+        return self.make_dataset(self.val_df)
+
+    @property
+    def test(self):
+        return self.make_dataset(self.test_df)
