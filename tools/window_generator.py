@@ -41,6 +41,10 @@ class WindowGenerator:
         ]))
 
     def split_window(self, features):
+        """
+        @param features:
+        @return: inputs,labels (shape: (batch, time, features))
+        """
         inputs = features[:, self.input_slice, :]
         labels = features[:, self.labels_slice, :]
 

@@ -9,6 +9,8 @@ SPLIT_RATIO = {
 MAX_EPOCH = 20
 
 EARLY_STOPPING = {
-    'enabled': True,
+    'enabled': False,
     'patience': 4
 }
+
+CHECKPOINT_PATH = 'checkpoints'
