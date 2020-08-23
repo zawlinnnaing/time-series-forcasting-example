@@ -32,6 +32,13 @@ class WindowGenerator:
         self.labels_slice = slice(self.label_start, None)
         self.label_indices = np.arange(self.total_window_size)[self.labels_slice]
 
+        # For plotting purpose
+        self.sample_data = tf.stack([
+            np.array(self.train_df[: self.total_window_size]),
+            np.array(self.train_df[100: 100 + self.total_window_size]),
+            np.array(self.train_df[200: 200 + self.total_window_size])
+        ])
+
     def show_window_info(self):
         print('\n'.join([
             f'Total window size: {self.total_window_size}',
@@ -59,8 +66,8 @@ class WindowGenerator:
         # labels shape (batch, label_width, features)
         return inputs, labels
 
-    def plot(self, plot_col, model=None, window=None, max_subplots=3):
-        inputs, labels = window
+    def plot(self, plot_col, model=None, max_subplots=3):
+        inputs, labels = self.split_window(self.sample_data)
         plt.figure(figsize=(12, 8))
         plot_col_index = self.column_indices[plot_col]
         num_of_subplots = min(max_subplots, len(inputs))

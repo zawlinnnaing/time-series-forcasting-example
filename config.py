@@ -14,3 +14,6 @@ EARLY_STOPPING = {
 }
 
 CHECKPOINT_PATH = 'checkpoints'
+
+MODEL_NAME = 'FeedBack'
+

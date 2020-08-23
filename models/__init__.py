@@ -1,6 +1,8 @@
 import config as cfg
 import tensorflow as tf
 from tools.window_generator import WindowGenerator
+from tools.file_utils import make_dir, is_dir_empty
+import os
 
 
 def compile_and_fit(model: tf.keras.Model, window: WindowGenerator,
@@ -15,12 +17,30 @@ def compile_and_fit(model: tf.keras.Model, window: WindowGenerator,
     @param patience:
     @return:
     """
-    early_stopping = None
+
+    checkpoint_dir = os.path.join(cfg.CHECKPOINT_PATH, model_name)
+    checkpoint_path = os.path.join(checkpoint_dir, '{epoch:04d}.ckpt')
+
+    make_dir(checkpoint_dir)
+
+    callbacks = []
+
+    if not is_dir_empty(checkpoint_dir):
+        load_weight(model, checkpoint_dir)
+
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(
+        checkpoint_path,
+        save_weights_only=True,
+        verbose=1,
+    )
+    callbacks.append(cp_callback)
+
     if cfg.EARLY_STOPPING['enabled'] is True:
-        early_stopping = [tf.keras.callbacks.EarlyStopping(
+        early_stopping = tf.keras.callbacks.EarlyStopping(
             monitor='val_loss',
             patience=patience,
-            mode='min')]
+            mode='min')
+        callbacks.append(early_stopping)
 
     model.compile(
         optimizer=tf.optimizers.Adam(),
@@ -32,11 +52,18 @@ def compile_and_fit(model: tf.keras.Model, window: WindowGenerator,
         window.train,
         epochs=cfg.MAX_EPOCH,
         validation_data=window.val,
-        callbacks=early_stopping,
+        callbacks=callbacks,
         verbose=2,
     )
 
     return history
+
+
+def load_weight(model, checkpoint_dir):
+    latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
+    model.load_weights(latest_checkpoint)
+    print('Loaded from checkpoint ==> {}'.format(latest_checkpoint))
+    return model
 
 
 class ResidualWrapper(tf.keras.Model):

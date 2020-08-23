@@ -1,8 +1,10 @@
 from tools.data_processing import DataProcessor
 from tools.window_generator import WindowGenerator
 from tools.visualization import plot_violin_plots
-from models.rnn import FeedBack
-from models import compile_and_fit
+from models.rnn import FeedBack, single_shot_lstm
+from models import compile_and_fit, load_weight
+import os
+import config as cfg
 import tensorflow as tf
 import numpy as np
 
@@ -18,20 +20,10 @@ if __name__ == '__main__':
         label_width=OUTPUT_STEPS,
         shift=24)
 
-    print(len(data_processor.val_norm_df))
+    # feedback_model = FeedBack(32, OUTPUT_STEPS, NUM_FEATURES)
+    model = single_shot_lstm(OUTPUT_STEPS, NUM_FEATURES)
+    compile_and_fit(model, data_window, 'lstm')
+    checkpoint_dir = os.path.join(cfg.CHECKPOINT_PATH, 'lstm')
+    model = load_weight(model, checkpoint_dir)
 
-    feedback_model = FeedBack(32, OUTPUT_STEPS, NUM_FEATURES)
-    compile_and_fit(feedback_model, data_window)
-
-    # example_data = tf.stack([
-    #     np.array(data_processor.train_norm_df[:window_generator.total_window_size]),
-    #     np.array(data_processor.train_norm_df[100:100 + window_generator.total_window_size]),
-    # ])
-    #
-    # example_window = window_generator.split_window(example_data)
-    #
-    # print("Input windows shape", example_window[0].shape)
-    # print("Output windows shape", lstm_model(example_window[0]).shape)
-
-    # df_melt = data_processor.norm_df.melt(var_name='Column', value_name="Values")
-    # print(df_melt)
+    data_window.plot('clicks', model)
