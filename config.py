@@ -6,7 +6,7 @@ SPLIT_RATIO = {
     'test': 0.1
 }
 
-MAX_EPOCH = 20
+MAX_EPOCH = 150
 
 EARLY_STOPPING = {
     'enabled': False,
@@ -16,4 +16,3 @@ EARLY_STOPPING = {
 CHECKPOINT_PATH = 'checkpoints'
 
 MODEL_NAME = 'FeedBack'
-

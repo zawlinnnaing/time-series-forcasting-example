@@ -1,12 +1,9 @@
 from tools.data_processing import DataProcessor
 from tools.window_generator import WindowGenerator
-from tools.visualization import plot_violin_plots
 from models.rnn import FeedBack, single_shot_lstm
 from models import compile_and_fit, load_weight
 import os
 import config as cfg
-import tensorflow as tf
-import numpy as np
 
 if __name__ == '__main__':
     OUTPUT_STEPS = 24

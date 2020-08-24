@@ -21,7 +21,7 @@ def single_shot_lstm(output_steps, num_features):
     return tf.keras.Sequential([
         # Shape [batch, time, features] => [batch, lstm_units]
         # Adding more `lstm_units` just overfits more quickly.
-        tf.keras.layers.LSTM(32, return_sequences=False),
+        tf.keras.layers.LSTM(128, return_sequences=False),
         # Shape => [batch, out_steps*features]
         tf.keras.layers.Dense(output_steps * num_features,
                               kernel_initializer=tf.initializers.zeros),

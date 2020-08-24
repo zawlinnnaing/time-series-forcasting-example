@@ -47,13 +47,13 @@ class WindowGenerator:
             f'Label column name(s): {self.label_columns}'
         ]))
 
-    def split_window(self, features):
+    def split_window(self, data):
         """
-        @param features:
+        @param data: shape: (batch, time, features)
         @return: inputs,labels (shape: (batch, time, features))
         """
-        inputs = features[:, self.input_slice, :]
-        labels = features[:, self.labels_slice, :]
+        inputs = data[:, self.input_slice, :]
+        labels = data[:, self.labels_slice, :]
 
         if self.label_columns is not None:
             labels = tf.stack(
