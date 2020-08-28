@@ -43,7 +43,7 @@ def compile_and_fit(model: tf.keras.Model, window: WindowGenerator,
         callbacks.append(early_stopping)
 
     model.compile(
-        optimizer=tf.optimizers.Adam(),
+        optimizer=tf.keras.optimizers.Adam(),
         loss=tf.losses.MeanSquaredError(),
         metrics=[tf.metrics.MeanAbsoluteError()]
     )

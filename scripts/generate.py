@@ -4,8 +4,10 @@
 import pandas as pd
 import arrow
 import numpy as np
+import os
 import random
 from scripts.constants import ARROW_DATE_TIME_FORMAT, MATRICES
+from tools.file_utils import make_dir
 
 START_DATE_STR = '2017-01-01 00:00:00'
 
@@ -17,6 +19,12 @@ end_date_obj = arrow.get(END_DATE_STR, ARROW_DATE_TIME_FORMAT)
 diff_date = end_date_obj - start_date_obj
 
 diff_hours = diff_date.total_seconds() / 3600
+
+OUTPUT_DIR = '../output'
+
+OUTPUT_PATH = os.path.join(OUTPUT_DIR, 'data.csv')
+
+make_dir(OUTPUT_DIR)
 
 obj = {}
 
@@ -49,4 +57,4 @@ if __name__ == '__main__':
                 obj[metric].append(add_seasonality(hour))
 
     df = pd.DataFrame(data=obj, columns=MATRICES)
-    df.to_csv('output/data.csv', index=False)
+    df.to_csv(OUTPUT_PATH, index=False)
