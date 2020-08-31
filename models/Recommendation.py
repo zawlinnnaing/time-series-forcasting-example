@@ -28,8 +28,9 @@ class RecommendationModel:
     def train_candidate_model(self, epochs=100, load_checkpoint=False):
         model_name = 'recommendation_candidate_model.ckpt'
         checkpoint_path = os.path.join(self.checkpoint_dir, model_name)
+        print('checkpoint path', checkpoint_path)
         callbacks = []
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, save_freq=100)
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, save_freq='epoch')
         callbacks.append(cp_callback)
         if load_checkpoint is True:
             latest_checkpoint = tf.train.latest_checkpoint(self.checkpoint_dir)
@@ -39,5 +40,6 @@ class RecommendationModel:
         history = self.candidate_model.fit([self.train_ds.product_id, self.train_ds.customer_id], self.train_ds.rating,
                                            batch_size=32,
                                            epochs=epochs,
+                                           callbacks=callbacks
                                            )
         return history
