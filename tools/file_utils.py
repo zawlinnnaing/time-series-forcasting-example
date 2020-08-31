@@ -13,3 +13,7 @@ def is_dir_empty(file_dir):
         raise Exception('{} is not a directory'.format(file_dir))
     files = os.listdir(file_dir)
     return len(files) == 0
+
+
+def check_is_csv(file_path):
+    return file_path.lower().endswith('.csv')

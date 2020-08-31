@@ -35,14 +35,13 @@ def generate_rating_df(customers_vector, products_vector):
     }
 
     def get_random_products():
-        return np.random.choice(products_vector, random.randrange(7, 50, 1))
+        return np.random.choice(range(0, PRODUCTS_COUNT), random.randrange(7, 50, 1))
 
-    for customer in customers_vector:
+    for (customer_idx, customer) in enumerate(customers_vector):
         random_products = get_random_products()
-        random_products_length = random_products.shape[0]
-        for product in random_products:
-            result_dict['product_id'].append(str(product))
-            result_dict['customer_id'].append(str(customer))
+        for product_idx in random_products:
+            result_dict['product_id'].append(product_idx)
+            result_dict['customer_id'].append(customer_idx)
             result_dict['rating'].append(generate_rating())
     return pd.DataFrame(result_dict)
 
@@ -67,7 +66,7 @@ rating_df = generate_rating_df(customer_ids_vector, products_ids_vector)
 products_series = pd.Series(products_ids_vector, name='product_id')
 customer_series = pd.Series(customer_ids_vector, name='customer_id')
 
-output_path = os.path.join(OUTPUT_DIR, 'recommendation.csv')
+output_path = os.path.join(OUTPUT_DIR, 'rating.csv')
 rating_df.to_csv(output_path)
 products_series.to_csv(os.path.join(OUTPUT_DIR, 'products.csv'))
 customer_series.to_csv(os.path.join(OUTPUT_DIR, 'customers.csv'))
