@@ -6,10 +6,10 @@ import os
 import config as cfg
 
 if __name__ == '__main__':
-    OUTPUT_STEPS = 24
+    OUTPUT_STEPS = 12
     INPUT_STEPS = 24
     NUM_FEATURES = 4
-    MODEL_NAME = 'lstm-2'
+    MODEL_NAME = 'lstm-3'
     data_processor = DataProcessor()
     data_window = WindowGenerator(
         train_df=data_processor.train_norm_df,
