@@ -60,10 +60,16 @@ def compile_and_fit(model: tf.keras.Model, window: WindowGenerator,
 
 
 def load_weight(model, checkpoint_dir):
+    if not os.path.exists(checkpoint_dir):
+        print('Checkpoint not found ...')
+        return model
     latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
     model.load_weights(latest_checkpoint)
     print('Loaded from checkpoint ==> {}'.format(latest_checkpoint))
-    return model
+    # return model
+
+
+# def load_model(model,)
 
 
 class ResidualWrapper(tf.keras.Model):

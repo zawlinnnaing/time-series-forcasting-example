@@ -22,4 +22,6 @@ def make_model(n_products, n_customers):
         customer_embedding)  # shape: (batch, n_embedding_dim)
 
     dot_product = tf.keras.layers.Dot(axes=1, name='vector_dot_prod')([product_vector, customer_vector])
-    return tf.keras.Model([product_input, customer_input], dot_product, name='matrix_factorization')
+    model = tf.keras.Model([product_input, customer_input], dot_product, name='matrix_factorization')
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae'])
+    return model

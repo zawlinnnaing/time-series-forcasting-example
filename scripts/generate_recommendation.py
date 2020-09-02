@@ -58,6 +58,7 @@ def generate_ids_vector(count):
     return np.array([generate_uuid() for i in range(0, count, 1)])
 
 
+
 shops_vector = generate_ids_vector(SHOPS_COUNT)
 products_ids_vector = generate_ids_vector(PRODUCTS_COUNT)
 customer_ids_vector = generate_ids_vector(CUSTOMERS_COUNT)
