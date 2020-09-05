@@ -73,7 +73,7 @@ class RecommendationModel:
         embedding_name = 'product_embeddings'
         self._set_embeddings()
         # Shape: (1, embedding_dim) x (embedding_dim, n_of_products) => (1, n_of_products)
-        products = np.matmul(self.customer_embeddings[customer_id], self.product_embeddings.T)
+        products = np.matmul(self.product_embeddings[customer_id], self.product_embeddings.T)
         recommended_product_idxes = np.argpartition(products, -num_of_products)[-num_of_products:]
         return recommended_product_idxes, products[recommended_product_idxes]
 
