@@ -44,7 +44,7 @@ class RecommendationModel:
             load_weight(self.candidate_model, self.checkpoint_dir)
         # self.candidate_model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae'])
 
-    def train_candidate_model(self, epochs=100, load_checkpoint=False):
+    def train_candidate_model(self, epochs=100):
         print('checkpoint path', self.checkpoint_path)
         callbacks = []
         cp_callback = tf.keras.callbacks.ModelCheckpoint(self.checkpoint_path, save_freq='epoch',

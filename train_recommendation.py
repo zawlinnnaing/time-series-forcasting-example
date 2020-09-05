@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     recommendation_model = RecommendationModel(RATING_PATH, PRODUCT_PATH, CUSTOMER_PATH)
     if args.train:
-        recommendation_model.train_candidate_model(100, True)
+        recommendation_model.train_candidate_model(100)
     if args.eval:
         recommendation_model.eval_candidate_model(True)
 
