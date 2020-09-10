@@ -2,7 +2,7 @@ import pandas as pd
 from models import load_weight
 from tools.file_utils import check_is_csv, make_dir, is_dir_empty
 from sklearn.model_selection import train_test_split
-from models.matrix_factorization import make_model
+from models.recommendation_model import matrix_factorization_model
 import os
 import numpy as np
 import tensorflow as tf
@@ -32,7 +32,7 @@ class RecommendationModel:
         make_dir(checkpoint_dir)
         self.n_of_products, self.n_of_customers = self.product_series.size, self.customer_series.size
         self.train_ds, self.test_ds = train_test_split(self.rating_df)
-        self.candidate_model = make_model(self.n_of_products, self.n_of_customers)
+        self.candidate_model = matrix_factorization_model(self.n_of_products, self.n_of_customers)
         self.load_weight_and_compile(load_checkpoint)
 
         # model artifacts
@@ -73,7 +73,7 @@ class RecommendationModel:
         embedding_name = 'product_embeddings'
         self._set_embeddings()
         # Shape: (1, embedding_dim) x (embedding_dim, n_of_products) => (1, n_of_products)
-        products = np.matmul(self.product_embeddings[customer_id], self.product_embeddings.T)
+        products = np.matmul(self.customer_embeddings[customer_id], self.product_embeddings.T)
         recommended_product_idxes = np.argpartition(products, -num_of_products)[-num_of_products:]
         return recommended_product_idxes, products[recommended_product_idxes]
 

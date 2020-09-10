@@ -1,10 +1,16 @@
 import pandas as pd
+import config as cfg
+import os
 import tensorflow as tf
 import numpy as np
-import config as cfg
+from tools.utils import filter_index_and_null
 
 
 class DataProcessor:
+    """
+    Time series data processor
+    """
+
     def __init__(self, data_dir=cfg.DATA_DIR):
         self.data_dir = data_dir
         self.split_ratio = cfg.SPLIT_RATIO
@@ -30,3 +36,55 @@ class DataProcessor:
     def show_info(self):
         print(self.train_df.describe())
         print(self.test_df.describe())
+
+
+class RecommendationDataProcessor:
+    def __init__(self, data_dir='output'):
+        self.data_dir = data_dir
+
+        # Read data
+        products_path = os.path.join(data_dir, 'products.csv')
+        customers_path = os.path.join(data_dir, 'customers.csv')
+        ratings_path = os.path.join(data_dir, 'rating.csv')
+        self.products_df = pd.read_csv(products_path)
+        self.customers_df = pd.read_csv(customers_path)
+        self.ratings_df = pd.read_csv(ratings_path)
+        self.product_ids = self.products_df.pop('product_id')
+        self.customer_ids = self.customers_df.pop('customer_id')
+
+        self.products_df = self.transform_column_to_cat(self.products_df, 'type')
+
+        self.product_columns = list(filter(filter_index_and_null, self.products_df.columns[1:]))
+        self.customer_columns = list(filter(filter_index_and_null, self.customers_df.columns[1:]))
+        self.product_feature_dim, self.customer_feature_dim = len(self.product_columns), len(self.customer_columns)
+
+        # process data
+        result_columns = self.product_columns + self.customer_columns + ['label']
+        self._result_df = pd.DataFrame(columns=result_columns)
+
+        for idx, row in self.ratings_df.loc[:500].iterrows():
+            product_row = (self.products_df.loc[row['product_id'], self.product_columns]).values
+            customer_row = (self.customers_df.loc[row['customer_id'], self.customer_columns]).values
+            result_row = list(product_row) + list(customer_row) + [row['rating']]
+            result_dict = {}
+            for index, result_item in enumerate(result_row):
+                result_dict[result_columns[index]] = result_item
+            self._result_df = self._result_df.append(result_dict, ignore_index=True)
+
+        # make dataset
+        total_rows = len(self._result_df.index)
+        train_len = int(0.7 * total_rows)
+
+        labels = np.array(self._result_df.pop('label').values, dtype=np.float)
+        labels = tf.keras.utils.normalize(labels).T
+        features = np.array(self._result_df.values, dtype=np.float)
+        # Shapes: Feature (num_of_rows, num_of_features) , Label (num_of_rows, 1)
+        self.dataset = tf.data.Dataset.from_tensor_slices((features, labels)).shuffle(total_rows)
+        self.train_dataset = self.dataset.take(train_len)
+        self.test_dataset = self.dataset.skip(train_len)
+
+    @staticmethod
+    def transform_column_to_cat(df, col_name):
+        df[col_name] = pd.Categorical(df[col_name])
+        df[col_name] = df[col_name].cat.codes
+        return df
