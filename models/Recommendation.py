@@ -2,14 +2,15 @@ import pandas as pd
 from models import load_weight
 from tools.file_utils import check_is_csv, make_dir, is_dir_empty
 from sklearn.model_selection import train_test_split
-from models.recommendation_model import matrix_factorization_model
+from models.recommendation_model import matrix_factorization_model, deep_nn_model
 import os
 import numpy as np
 import tensorflow as tf
 from tensorboard.plugins import projector
+from tools.data_processing import RecommendationDataProcessor
 
 
-class RecommendationModel:
+class MatrixRecommendationModel:
     def __init__(self,
                  rating_path,
                  product_path,
@@ -91,3 +92,35 @@ class RecommendationModel:
         embedding = config.embeddings.add()
         embedding.tensor_name = '{}/.ATTRIBUTES/VARIABLE_VALUE'.format(embedding_name)
         projector.visualize_embeddings(log_dir, config)
+
+
+class DeepNNRecommendationModel:
+    def __init__(self, data_dir, checkpoint_dir="checkpoint/deepNN_recommendation"):
+        self.data_processor = RecommendationDataProcessor(data_dir)
+        self.model = deep_nn_model(self.data_processor.product_feature_dim, self.data_processor.customer_feature_dim)
+        self.checkpoint_dir = checkpoint_dir
+        self.checkpoint_path = os.path.join(checkpoint_dir, 'deep_nn_recommendation.ckpt')
+
+    def train(self, epochs=300, save_checkpoint=True):
+        callbacks = []
+        load_weight(self.model, self.checkpoint_dir)
+        checkpoint_cp = tf.keras.callbacks.ModelCheckpoint(self.checkpoint_path, save_weights_only=True)
+        if save_checkpoint:
+            callbacks.append(checkpoint_cp)
+        history = self.model.fit(self.data_processor.train_dataset,
+                                 batch_size=32,
+                                 epochs=epochs,
+                                 callbacks=callbacks)
+        return history
+
+    def evaluate(self):
+        load_weight(self.model, self.checkpoint_dir)
+        self.model.evaluate(self.data_processor.test_dataset, batch_size=32)
+
+    def product_model(self):
+        sub_model = tf.keras.Sequential()
+        layer_names = ['model_input', 'product_input', 'product_dense_1', 'product_embeddings']
+        for layer in self.model.layers:
+            if layer.name in layer_names:
+                sub_model.add(layer)
+        print(sub_model.summary())

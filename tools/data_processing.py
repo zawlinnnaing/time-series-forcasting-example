@@ -62,7 +62,7 @@ class RecommendationDataProcessor:
         result_columns = self.product_columns + self.customer_columns + ['label']
         self._result_df = pd.DataFrame(columns=result_columns)
 
-        for idx, row in self.ratings_df.loc[:500].iterrows():
+        for idx, row in self.ratings_df.iterrows():
             product_row = (self.products_df.loc[row['product_id'], self.product_columns]).values
             customer_row = (self.customers_df.loc[row['customer_id'], self.customer_columns]).values
             result_row = list(product_row) + list(customer_row) + [row['rating']]
@@ -76,12 +76,18 @@ class RecommendationDataProcessor:
         train_len = int(0.7 * total_rows)
 
         labels = np.array(self._result_df.pop('label').values, dtype=np.float)
-        labels = tf.keras.utils.normalize(labels).T
+        labels = np.expand_dims(labels, axis=1)
         features = np.array(self._result_df.values, dtype=np.float)
         # Shapes: Feature (num_of_rows, num_of_features) , Label (num_of_rows, 1)
-        self.dataset = tf.data.Dataset.from_tensor_slices((features, labels)).shuffle(total_rows)
+        self.dataset = tf.data.Dataset.from_tensor_slices((features, labels))
+        self.dataset = self.dataset.map(self._map_ds).shuffle(total_rows)
         self.train_dataset = self.dataset.take(train_len)
         self.test_dataset = self.dataset.skip(train_len)
+
+    @staticmethod
+    def _map_ds(feature, label):
+        num_of_features = feature.shape[0]
+        return tf.reshape(feature, [1, num_of_features]), label
 
     @staticmethod
     def transform_column_to_cat(df, col_name):

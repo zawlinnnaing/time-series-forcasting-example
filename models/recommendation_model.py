@@ -27,41 +27,57 @@ def matrix_factorization_model(n_products, n_customers):
     return model
 
 
+def reshape_for_customer_input(customer_input, customer_feature_dim):
+    output = customer_input[:, -customer_feature_dim:]
+    return output
+
+
+def reshape_for_product_input(product_input, product_feature_dim):
+    # print("product input", product_input.shape)
+    output = product_input[:, :product_feature_dim]
+    return output
+
+
 def deep_nn_model(product_feature_dim, customer_feature_dim):
     # Note: batch_size will be omitted for following shapes. Assume that batch_size is first dimension of shape.
     # i.e (batch_size, shape_1, shape_2)
 
     # Shape: (,total_feature)
-    input_layer = tf.keras.layers.Input((product_feature_dim + customer_feature_dim, 1), name="model_input")
+    # print("feature dims", product_feature_dim, customer_feature_dim)
+    input_layer = tf.keras.layers.Input(shape=(product_feature_dim + customer_feature_dim,),
+                                        name="model_input")
     # input_layer = tf.keras.layers.Permute((2, 1),
-    #                                       input_shape=(product_feature_dim + customer_feature_dim, 1),
-    #                                       name="input_permute_layer")
-    print('input_layer', input_layer.shape)
+    #                                       # input_shape=(product_feature_dim + customer_feature_dim,),
+    #                                       name="input_permute_layer")(input_layer)
     # Shape: (,product_feature_dim)
-    product_input = tf.keras.layers.Lambda(lambda x: x[:, :product_feature_dim, :], name="product_input")(input_layer)
+    product_input = tf.keras.layers.Lambda(lambda x: reshape_for_product_input(x, product_feature_dim),
+                                           name="product_input")(input_layer)
+    product_dense_1 = tf.keras.layers.Dense(64, activation='relu', name="product_dense_1")(product_input)
     # Shape: (,product_feature_dim, embedding_dim)
     product_embedding = tf.keras.layers.Dense(
         embedding_dim,
         name="product_embeddings"
-    )(product_input)
+    )(product_dense_1)
     # Shape: (embedding_dim, 64)
-    product_dense_1 = tf.keras.layers.Dense(64, activation='relu')(product_embedding)
-    print("product shapes: ", product_input.shape, product_embedding.shape, product_dense_1.shape)
+    # print("product shapes: ", product_input.shape, product_embedding.shape, product_dense_1.shape)
 
     # Shape: (customer_feature_dim)
-    customer_input = tf.keras.layers.Lambda(lambda x: x[:, -customer_feature_dim:, :], name="customer_input")(
+    customer_input = tf.keras.layers.Lambda(lambda x: reshape_for_customer_input(x, customer_feature_dim),
+                                            name="customer_input")(
         input_layer)
+
+    customer_dense_1 = tf.keras.layers.Dense(64, activation='relu', name="customer_dense_1")(customer_input)
 
     # Shape: (customer_feature_dim, embedding_dim)
     customer_embedding = tf.keras.layers.Dense(
         embedding_dim,
         name="customer_embeddings"
-    )(customer_input)
+    )(customer_dense_1)
     # Shape: (
-    customer_dense_1 = tf.keras.layers.Dense(64, activation='relu')(customer_embedding)
-    print("customer shapes: ", customer_input.shape, customer_embedding.shape, customer_dense_1.shape)
-    concatted_layer = tf.keras.layers.Concatenate(axis=1, name="concatted_layer")([product_dense_1, customer_dense_1])
-    output = tf.keras.layers.Dense(1, activation="relu")(concatted_layer)
+    dot_product_layer = tf.keras.layers.Dot(axes=1, name="dot_product_layer")(
+        [product_embedding, customer_embedding])
+    output = tf.keras.layers.Dense(1, activation="relu")(dot_product_layer)
     model = tf.keras.Model(inputs=input_layer, outputs=output, name="DNNRecommendationModel")
     model.compile(optimizer="adam", loss="mean_squared_error", metrics=['mse', 'mae'])
+    print(model.summary())
     return model
