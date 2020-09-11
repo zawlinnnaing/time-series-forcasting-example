@@ -43,7 +43,6 @@ def deep_nn_model(product_feature_dim, customer_feature_dim):
     # i.e (batch_size, shape_1, shape_2)
 
     # Shape: (,total_feature)
-    # print("feature dims", product_feature_dim, customer_feature_dim)
     input_layer = tf.keras.layers.Input(shape=(product_feature_dim + customer_feature_dim,),
                                         name="model_input")
     # input_layer = tf.keras.layers.Permute((2, 1),
@@ -58,10 +57,6 @@ def deep_nn_model(product_feature_dim, customer_feature_dim):
         embedding_dim,
         name="product_embeddings"
     )(product_dense_1)
-    # Shape: (embedding_dim, 64)
-    # print("product shapes: ", product_input.shape, product_embedding.shape, product_dense_1.shape)
-
-    # Shape: (customer_feature_dim)
     customer_input = tf.keras.layers.Lambda(lambda x: reshape_for_customer_input(x, customer_feature_dim),
                                             name="customer_input")(
         input_layer)
@@ -79,5 +74,4 @@ def deep_nn_model(product_feature_dim, customer_feature_dim):
     output = tf.keras.layers.Dense(1, activation="relu")(dot_product_layer)
     model = tf.keras.Model(inputs=input_layer, outputs=output, name="DNNRecommendationModel")
     model.compile(optimizer="adam", loss="mean_squared_error", metrics=['mse', 'mae'])
-    print(model.summary())
     return model

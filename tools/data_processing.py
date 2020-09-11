@@ -46,6 +46,7 @@ class RecommendationDataProcessor:
         products_path = os.path.join(data_dir, 'products.csv')
         customers_path = os.path.join(data_dir, 'customers.csv')
         ratings_path = os.path.join(data_dir, 'rating.csv')
+        print("===> Reading csvs...")
         self.products_df = pd.read_csv(products_path)
         self.customers_df = pd.read_csv(customers_path)
         self.ratings_df = pd.read_csv(ratings_path)
@@ -61,7 +62,7 @@ class RecommendationDataProcessor:
         # process data
         result_columns = self.product_columns + self.customer_columns + ['label']
         self._result_df = pd.DataFrame(columns=result_columns)
-
+        print("===> Processing data...")
         for idx, row in self.ratings_df.iterrows():
             product_row = (self.products_df.loc[row['product_id'], self.product_columns]).values
             customer_row = (self.customers_df.loc[row['customer_id'], self.customer_columns]).values
@@ -70,7 +71,7 @@ class RecommendationDataProcessor:
             for index, result_item in enumerate(result_row):
                 result_dict[result_columns[index]] = result_item
             self._result_df = self._result_df.append(result_dict, ignore_index=True)
-
+        print("===> Processed Data.")
         # make dataset
         total_rows = len(self._result_df.index)
         train_len = int(0.7 * total_rows)
