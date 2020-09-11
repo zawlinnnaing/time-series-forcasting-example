@@ -3,6 +3,7 @@ import config as cfg
 import os
 import tensorflow as tf
 import numpy as np
+from tqdm import tqdm
 from tools.utils import filter_index_and_null
 
 
@@ -63,19 +64,21 @@ class RecommendationDataProcessor:
         result_columns = self.product_columns + self.customer_columns + ['label']
         self._result_df = pd.DataFrame(columns=result_columns)
         print("===> Processing data...")
-        for idx, row in self.ratings_df.iterrows():
-            product_row = (self.products_df.loc[row['product_id'], self.product_columns]).values
-            customer_row = (self.customers_df.loc[row['customer_id'], self.customer_columns]).values
-            result_row = list(product_row) + list(customer_row) + [row['rating']]
-            result_dict = {}
-            for index, result_item in enumerate(result_row):
-                result_dict[result_columns[index]] = result_item
-            self._result_df = self._result_df.append(result_dict, ignore_index=True)
+
+        with tqdm(total=len(self.ratings_df.index)) as p_bar:
+            for idx, row in self.ratings_df.iterrows():
+                product_row = (self.products_df.loc[row['product_id'], self.product_columns]).values
+                customer_row = (self.customers_df.loc[row['customer_id'], self.customer_columns]).values
+                result_row = list(product_row) + list(customer_row) + [row['rating']]
+                result_dict = {}
+                for index, result_item in enumerate(result_row):
+                    result_dict[result_columns[index]] = result_item
+                self._result_df = self._result_df.append(result_dict, ignore_index=True)
+                p_bar.update(1)
         print("===> Processed Data.")
         # make dataset
         total_rows = len(self._result_df.index)
         train_len = int(0.7 * total_rows)
-
         labels = np.array(self._result_df.pop('label').values, dtype=np.float)
         labels = np.expand_dims(labels, axis=1)
         features = np.array(self._result_df.values, dtype=np.float)
