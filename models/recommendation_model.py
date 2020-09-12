@@ -38,6 +38,12 @@ def reshape_for_product_input(product_input, product_feature_dim):
     return output
 
 
+def generate_dense_for_deep_nn(input_layer, layer_name):
+    dense_1 = tf.keras.layers.Dense(128, activation='relu', name='{}_dense_1'.format(layer_name))(input_layer)
+    dense_2 = tf.keras.layers.Dense(64, activation='relu', name='{}_dense_2'.format(layer_name))(dense_1)
+    return dense_2
+
+
 def deep_nn_model(product_feature_dim, customer_feature_dim):
     # Note: batch_size will be omitted for following shapes. Assume that batch_size is first dimension of shape.
     # i.e (batch_size, shape_1, shape_2)
@@ -51,23 +57,22 @@ def deep_nn_model(product_feature_dim, customer_feature_dim):
     # Shape: (,product_feature_dim)
     product_input = tf.keras.layers.Lambda(lambda x: reshape_for_product_input(x, product_feature_dim),
                                            name="product_input")(input_layer)
-    product_dense_1 = tf.keras.layers.Dense(64, activation='relu', name="product_dense_1")(product_input)
+    product_dense = generate_dense_for_deep_nn(product_input, 'product')
     # Shape: (,product_feature_dim, embedding_dim)
     product_embedding = tf.keras.layers.Dense(
         embedding_dim,
         name="product_embeddings"
-    )(product_dense_1)
+    )(product_dense)
     customer_input = tf.keras.layers.Lambda(lambda x: reshape_for_customer_input(x, customer_feature_dim),
                                             name="customer_input")(
         input_layer)
 
-    customer_dense_1 = tf.keras.layers.Dense(64, activation='relu', name="customer_dense_1")(customer_input)
-
+    customer_dense = generate_dense_for_deep_nn(input_layer, 'customer')
     # Shape: (customer_feature_dim, embedding_dim)
     customer_embedding = tf.keras.layers.Dense(
         embedding_dim,
         name="customer_embeddings"
-    )(customer_dense_1)
+    )(customer_dense)
     # Shape: (
     dot_product_layer = tf.keras.layers.Dot(axes=1, name="dot_product_layer")(
         [product_embedding, customer_embedding])
