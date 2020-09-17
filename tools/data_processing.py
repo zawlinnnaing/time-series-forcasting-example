@@ -4,7 +4,7 @@ import os
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
-from tools.utils import filter_index_and_null
+from tools.utils import filter_index_and_null, np_iter
 
 
 class DataProcessor:
@@ -59,14 +59,16 @@ class RecommendationDataProcessor:
         self.product_columns = list(filter(filter_index_and_null, self.products_df.columns[1:]))
         self.customer_columns = list(filter(filter_index_and_null, self.customers_df.columns[1:]))
         self.product_feature_dim, self.customer_feature_dim = len(self.product_columns), len(self.customer_columns)
+        self.feature_columns = self.product_columns + self.customer_columns
+        self.features_depth = self._get_features_depth()
 
         # process data
         result_columns = self.product_columns + self.customer_columns + ['label']
         self._result_df = pd.DataFrame(columns=result_columns)
         print("===> Processing data...")
 
-        with tqdm(total=len(self.ratings_df.index)) as p_bar:
-            for idx, row in self.ratings_df.iterrows():
+        with tqdm(total=len(self.ratings_df.loc[:100])) as p_bar:
+            for idx, row in self.ratings_df.loc[:100].iterrows():
                 product_row = (self.products_df.loc[row['product_id'], self.product_columns]).values
                 customer_row = (self.customers_df.loc[row['customer_id'], self.customer_columns]).values
                 result_row = list(product_row) + list(customer_row) + [row['rating']]
@@ -88,10 +90,39 @@ class RecommendationDataProcessor:
         self.train_dataset = self.dataset.take(train_len)
         self.test_dataset = self.dataset.skip(train_len)
 
-    @staticmethod
-    def _map_ds(feature, label):
-        num_of_features = feature.shape[0]
-        return tf.reshape(feature, [1, num_of_features]), label
+    def _get_features_depth(self):
+        features_depth = list()
+
+        def _append_features_depth(col_name, df):
+            features_depth.append(pd.unique(df.loc[:, col_name]).shape[0])
+
+        for product_col in self.product_columns:
+            _append_features_depth(product_col, self.products_df)
+        for customer_col in self.customer_columns:
+            _append_features_depth(customer_col, self.customers_df)
+        return features_depth
+
+    def _map_ds(self, feature, label):
+        final_features = np.array([])
+        feature_depth_idx = 0
+        print("feature", feature)
+
+        def feature_map_fn(features_depth, feature_idx):
+            nonlocal final_features, feature_depth_idx
+            # one_hot_tensor = tf.one_hot(tf.cast(feature_idx, tf.int32),
+            #                             features_depth[feature_depth_idx],
+            #                             dtype=tf.float32)
+            # if final_features is None:
+            #     final_features = one_hot_tensor
+            # else:
+            #     print("one hot tensor", one_hot_tensor, final_features)
+            #     final_features = tf.concat([final_features, one_hot_tensor], axis=0)
+            feature_depth_idx += 1
+
+        tf.map_fn(lambda x: feature_map_fn(self.features_depth, x), feature)
+
+        print("final features", final_features)
+        return tf.reshape(final_features, [1, final_features.shape[0]]), label
 
     @staticmethod
     def transform_column_to_cat(df, col_name):

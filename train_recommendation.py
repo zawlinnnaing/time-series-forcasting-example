@@ -1,7 +1,10 @@
 import argparse
 import os
 import sys
+import tensorflow as tf
 from models.Recommendation import DeepNNRecommendationModel, MatrixRecommendationModel
+
+tf.compat.v1.enable_eager_execution()
 
 parser = argparse.ArgumentParser(description='Script for training recommendation model')
 
