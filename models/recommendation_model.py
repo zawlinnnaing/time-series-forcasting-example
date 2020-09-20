@@ -67,7 +67,7 @@ def deep_nn_model(product_feature_dim, customer_feature_dim):
                                             name="customer_input")(
         input_layer)
 
-    customer_dense = generate_dense_for_deep_nn(input_layer, 'customer')
+    customer_dense = generate_dense_for_deep_nn(customer_input, 'customer')
     # Shape: (customer_feature_dim, embedding_dim)
     customer_embedding = tf.keras.layers.Dense(
         embedding_dim,
