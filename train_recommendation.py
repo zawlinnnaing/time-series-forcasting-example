@@ -4,8 +4,6 @@ import sys
 import tensorflow as tf
 from models.Recommendation import DeepNNRecommendationModel, MatrixRecommendationModel
 
-tf.compat.v1.enable_eager_execution()
-
 parser = argparse.ArgumentParser(description='Script for training recommendation model')
 
 parser.add_argument('--train', action='store_true', help='Train the model')
@@ -23,7 +21,7 @@ parser.add_argument('--checkpoint_dir', action='store', type=str, help='Director
 
 if __name__ == '__main__':
     args = parser.parse_args()
-
+    tf.compat.v1.enable_eager_execution()
     RATING_PATH = os.path.join(args.data_dir, 'rating.csv')
     PRODUCT_PATH = os.path.join(args.data_dir, 'products.csv')
     CUSTOMER_PATH = os.path.join(args.data_dir, 'customers.csv')

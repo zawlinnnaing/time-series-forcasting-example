@@ -1,4 +1,6 @@
 import tensorflow as tf
+from tensorflow.keras.layers.experimental import preprocessing
+from tensorflow.keras.utils import plot_model
 
 embedding_dim = 50
 
@@ -27,56 +29,58 @@ def matrix_factorization_model(n_products, n_customers):
     return model
 
 
-def reshape_for_customer_input(customer_input, customer_feature_dim):
+def reshape_for_customer_input(customer_input, customer_feature_dim, features_depth):
     output = customer_input[:, -customer_feature_dim:]
     return output
 
 
-def reshape_for_product_input(product_input, product_feature_dim):
+def reshape_for_product_input(product_input, product_feature_dim, features_depth):
     # print("product input", product_input.shape)
     output = product_input[:, :product_feature_dim]
     return output
 
 
 def generate_dense_for_deep_nn(input_layer, layer_name):
-    dense_1 = tf.keras.layers.Dense(128, activation='relu', name='{}_dense_1'.format(layer_name))(input_layer)
+    dense_1 = tf.keras.layers.Dense(64, activation='relu', name='{}_dense_1'.format(layer_name))(input_layer)
     dense_2 = tf.keras.layers.Dense(64, activation='relu', name='{}_dense_2'.format(layer_name))(dense_1)
     return dense_2
 
 
-def deep_nn_model(product_feature_dim, customer_feature_dim):
+def deep_nn_preprocess_model(x, input_features_depth: list, name):
+    one_hot_vectors = []
+    print("from preprocess", x)
+    for (index, value) in enumerate(x):
+        one_hot_vectors.append(tf.one_hot(value, input_features_depth[index]))
+    return tf.convert_to_tensor(one_hot_vectors, name=name)
+
+
+def deep_nn_model(product_feature_dim, customer_feature_dim, features_depth):
+    tf.compat.v1.enable_eager_execution()
+
     # Note: batch_size will be omitted for following shapes. Assume that batch_size is first dimension of shape.
     # i.e (batch_size, shape_1, shape_2)
 
-    # Shape: (,total_feature)
-    input_layer = tf.keras.layers.Input(shape=(product_feature_dim + customer_feature_dim,),
-                                        name="model_input")
-    # input_layer = tf.keras.layers.Permute((2, 1),
-    #                                       # input_shape=(product_feature_dim + customer_feature_dim,),
-    #                                       name="input_permute_layer")(input_layer)
     # Shape: (,product_feature_dim)
-    product_input = tf.keras.layers.Lambda(lambda x: reshape_for_product_input(x, product_feature_dim),
-                                           name="product_input")(input_layer)
+    product_input = tf.keras.layers.Input(shape=(product_feature_dim,), name="product_input")
+    customer_input = tf.keras.layers.Input(shape=(customer_feature_dim,), name="customer_input")
+
     product_dense = generate_dense_for_deep_nn(product_input, 'product')
     # Shape: (,product_feature_dim, embedding_dim)
     product_embedding = tf.keras.layers.Dense(
         embedding_dim,
         name="product_embeddings"
     )(product_dense)
-    customer_input = tf.keras.layers.Lambda(lambda x: reshape_for_customer_input(x, customer_feature_dim),
-                                            name="customer_input")(
-        input_layer)
 
-    customer_dense = generate_dense_for_deep_nn(input_layer, 'customer')
+    customer_dense = generate_dense_for_deep_nn(customer_input, 'customer')
     # Shape: (customer_feature_dim, embedding_dim)
     customer_embedding = tf.keras.layers.Dense(
         embedding_dim,
         name="customer_embeddings"
     )(customer_dense)
     # Shape: (
-    dot_product_layer = tf.keras.layers.Dot(axes=1, name="dot_product_layer")(
-        [product_embedding, customer_embedding])
-    output = tf.keras.layers.Dense(1, activation="relu")(dot_product_layer)
-    model = tf.keras.Model(inputs=input_layer, outputs=output, name="DNNRecommendationModel")
+    dot_product_layer = tf.keras.layers.Dot(axes=1, name="dot_product_layer")([product_embedding, customer_embedding])
+    output = tf.keras.layers.Dense(1, activation="relu", name='output')(dot_product_layer)
+    model = tf.keras.Model(inputs=[product_input, customer_input], outputs=output, name="DNNRecommendationModel")
     model.compile(optimizer="adam", loss="mean_squared_error", metrics=['mse', 'mae'])
+    tf.keras.utils.plot_model(model, "multi_input_and_output_model.png", show_shapes=True)
     return model

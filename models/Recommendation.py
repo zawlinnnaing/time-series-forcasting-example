@@ -97,7 +97,8 @@ class MatrixRecommendationModel:
 class DeepNNRecommendationModel:
     def __init__(self, data_dir, checkpoint_dir="checkpoint/deepNN_recommendation"):
         self.data_processor = RecommendationDataProcessor(data_dir)
-        self.model = deep_nn_model(self.data_processor.product_feature_dim, self.data_processor.customer_feature_dim)
+        self.model = deep_nn_model(self.data_processor.product_feature_dim, self.data_processor.customer_feature_dim,
+                                   self.data_processor.features_depth)
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_path = os.path.join(checkpoint_dir, 'deep_nn_recommendation.ckpt')
 
@@ -107,7 +108,7 @@ class DeepNNRecommendationModel:
         checkpoint_cp = tf.keras.callbacks.ModelCheckpoint(self.checkpoint_path, save_weights_only=True)
         if save_checkpoint:
             callbacks.append(checkpoint_cp)
-        history = self.model.fit(self.data_processor.train_dataset,
+        history = self.model.fit(self.data_processor.train_ds,
                                  batch_size=32,
                                  epochs=epochs,
                                  callbacks=callbacks)
@@ -115,7 +116,7 @@ class DeepNNRecommendationModel:
 
     def evaluate(self):
         load_weight(self.model, self.checkpoint_dir)
-        self.model.evaluate(self.data_processor.test_dataset, batch_size=32)
+        self.model.evaluate(self.data_processor.test_ds, batch_size=32)
 
     def product_model(self):
         sub_model = tf.keras.Sequential()

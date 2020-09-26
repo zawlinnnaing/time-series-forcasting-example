@@ -65,6 +65,7 @@ class RecommendationDataProcessor:
         # process data
         result_columns = self.product_columns + self.customer_columns + ['label']
         self._result_df = pd.DataFrame(columns=result_columns)
+
         print("===> Processing data...")
 
         with tqdm(total=len(self.ratings_df.loc[:100])) as p_bar:
@@ -83,12 +84,21 @@ class RecommendationDataProcessor:
         train_len = int(0.7 * total_rows)
         labels = np.array(self._result_df.pop('label').values, dtype=np.float)
         labels = np.expand_dims(labels, axis=1)
+        products_df = self._result_df[self.product_columns]
+        customers_df = self._result_df[self.customer_columns]
         features = np.array(self._result_df.values, dtype=np.float)
+        print('features shape', features.shape)
+        product_features, customers_features = np.array(products_df.values, dtype=np.float), np.array(
+            customers_df.values, dtype=np.float)
         # Shapes: Feature (num_of_rows, num_of_features) , Label (num_of_rows, 1)
-        self.dataset = tf.data.Dataset.from_tensor_slices((features, labels))
-        self.dataset = self.dataset.map(self._map_ds).shuffle(total_rows)
-        self.train_dataset = self.dataset.take(train_len)
-        self.test_dataset = self.dataset.skip(train_len)
+        self.ds, self.train_ds, self.test_ds = self._make_ds((features, labels), train_len, total_rows)
+        # self.product_ds, self.train_product_ds, self.test_product_ds = self._make_np_ds(product_features,
+        #                                                                                 train_len,
+        #                                                                                 total_rows)
+        # self.customer_ds, self.train_customer_ds, self.test_customer_ds = self._make_np_ds(customers_features,
+        #                                                                                    train_len,
+        #                                                                                    total_rows)
+        # self.label_ds, self.train_label_ds, self.test_label_ds = self._make_np_ds(labels, train_len, total_rows)
 
     def _get_features_depth(self):
         features_depth = list()
@@ -102,27 +112,33 @@ class RecommendationDataProcessor:
             _append_features_depth(customer_col, self.customers_df)
         return features_depth
 
+    @staticmethod
+    def _make_np_ds(features, train_len, total_rows):
+        np.random.shuffle(features)
+        test_len = total_rows - train_len
+        return features, features[:train_len, :], features[-test_len:, :]
+
+    def _make_ds(self, features, train_len, total_rows):
+        dataset = tf.data.Dataset.from_tensor_slices(features)
+        dataset = dataset.map(self._map_ds).shuffle(total_rows)
+        train_dataset = dataset.take(train_len)
+        test_dataset = dataset.skip(train_len)
+        return dataset, train_dataset, test_dataset,
+
     def _map_ds(self, feature, label):
-        final_features = np.array([])
-        feature_depth_idx = 0
-        print("feature", feature)
-
-        def feature_map_fn(features_depth, feature_idx):
-            nonlocal final_features, feature_depth_idx
-            # one_hot_tensor = tf.one_hot(tf.cast(feature_idx, tf.int32),
-            #                             features_depth[feature_depth_idx],
-            #                             dtype=tf.float32)
-            # if final_features is None:
-            #     final_features = one_hot_tensor
-            # else:
-            #     print("one hot tensor", one_hot_tensor, final_features)
-            #     final_features = tf.concat([final_features, one_hot_tensor], axis=0)
-            feature_depth_idx += 1
-
-        tf.map_fn(lambda x: feature_map_fn(self.features_depth, x), feature)
-
-        print("final features", final_features)
-        return tf.reshape(final_features, [1, final_features.shape[0]]), label
+        # num_of_features = feature.shape[0]
+        # return tf.reshape(feature, [1, num_of_features])
+        product_feature = feature[:len(self.product_columns)]
+        product_feature_len = len(product_feature)
+        customer_feature = feature[-len(self.customer_columns):]
+        customer_feature_len = len(customer_feature)
+        product_feature, customer_feature = tf.reshape(product_feature, [1, product_feature_len]), tf.reshape(
+            customer_feature, [1, customer_feature_len])
+        return {
+                   'product_input': product_feature,
+                   'customer_input': customer_feature,
+               }, label
+        # return  [product_feature, customer_feature]
 
     @staticmethod
     def transform_column_to_cat(df, col_name):
