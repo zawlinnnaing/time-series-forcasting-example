@@ -70,8 +70,8 @@ class RecommendationDataProcessor:
 
         print("===> Processing data...")
 
-        with tqdm(total=len(self.ratings_df.loc[:100])) as p_bar:
-            for idx, row in self.ratings_df.loc[:100].iterrows():
+        with tqdm(total=len(self.ratings_df)) as p_bar:
+            for idx, row in self.ratings_df.iterrows():
                 product_row = (self.products_df.loc[row['product_id'], self.product_columns]).values
                 customer_row = (self.customers_df.loc[row['customer_id'], self.customer_columns]).values
                 result_row = list(product_row) + list(customer_row) + [row['rating']]
@@ -86,12 +86,12 @@ class RecommendationDataProcessor:
         train_len = int(0.7 * total_rows)
         labels = np.array(self._result_df.pop('label').values, dtype=np.float)
         labels = np.expand_dims(labels, axis=1)
-        products_df = self._result_df[self.product_columns]
-        customers_df = self._result_df[self.customer_columns]
+        # products_df = self._result_df[self.product_columns]
+        # customers_df = self._result_df[self.customer_columns]
         features = np.array(self._result_df.values, dtype=np.float)
         print('features shape', features.shape)
-        product_features, customers_features = np.array(products_df.values, dtype=np.float), np.array(
-            customers_df.values, dtype=np.float)
+        # product_features, customers_features = np.array(products_df.values, dtype=np.float), np.array(
+        #     customers_df.values, dtype=np.float)
         # Shapes: Feature (num_of_rows, num_of_features) , Label (num_of_rows, 1)
         self.ds, self.train_ds, self.test_ds = self._make_ds((features, labels), train_len, total_rows)
         # self.product_ds, self.train_product_ds, self.test_product_ds = self._make_np_ds(product_features,
