@@ -95,11 +95,12 @@ class MatrixRecommendationModel:
 
 
 class DeepNNRecommendationModel:
-    def __init__(self, data_dir, checkpoint_dir="checkpoint/deepNN_recommendation"):
+    def __init__(self, data_dir, checkpoint_dir="./checkpoint/deepNN_recommendation"):
         self.data_processor = RecommendationDataProcessor(data_dir)
         self.model = deep_nn_model(self.data_processor.product_feature_dim, self.data_processor.customer_feature_dim,
                                    self.data_processor.features_depth)
         self.checkpoint_dir = checkpoint_dir
+        make_dir(self.checkpoint_dir)
         self.checkpoint_path = os.path.join(checkpoint_dir, 'deep_nn_recommendation.ckpt')
 
     def train(self, epochs=300, save_checkpoint=True):

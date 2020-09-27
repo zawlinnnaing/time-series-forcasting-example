@@ -25,7 +25,7 @@ if __name__ == '__main__':
     RATING_PATH = os.path.join(args.data_dir, 'rating.csv')
     PRODUCT_PATH = os.path.join(args.data_dir, 'products.csv')
     CUSTOMER_PATH = os.path.join(args.data_dir, 'customers.csv')
-
+    checkpoint_dir = os.path.join(args.checkpoint_dir, args.model)
     if not args.train and not args.eval:
         print('Need to specify "--train" or "--eval" flags or both.')
         sys.exit()
@@ -38,7 +38,7 @@ if __name__ == '__main__':
             recommendation_model.eval_candidate_model(True)
 
     elif args.model == 'dnn':
-        recommendation_model = DeepNNRecommendationModel(args.data_dir, args.checkpoint_dir)
+        recommendation_model = DeepNNRecommendationModel(args.data_dir, checkpoint_dir)
         if args.train:
             recommendation_model.train(epochs=args.epoch)
         if args.eval:

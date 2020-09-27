@@ -1,10 +1,12 @@
-import pandas as pd
-import config as cfg
 import os
-import tensorflow as tf
+
 import numpy as np
+import pandas as pd
+import tensorflow as tf
 from tqdm import tqdm
-from tools.utils import filter_index_and_null, np_iter
+
+import config as cfg
+from tools.utils import filter_index_and_null
 
 
 class DataProcessor:
@@ -126,19 +128,27 @@ class RecommendationDataProcessor:
         return dataset, train_dataset, test_dataset,
 
     def _map_ds(self, feature, label):
-        # num_of_features = feature.shape[0]
-        # return tf.reshape(feature, [1, num_of_features])
         product_feature = feature[:len(self.product_columns)]
         product_feature_len = len(product_feature)
+        product_one_hot_vector = self._make_one_hot_encoding(product_feature, self.features_depth[:product_feature_len])
         customer_feature = feature[-len(self.customer_columns):]
         customer_feature_len = len(customer_feature)
-        product_feature, customer_feature = tf.reshape(product_feature, [1, product_feature_len]), tf.reshape(
-            customer_feature, [1, customer_feature_len])
+        customer_one_hot_vector = self._make_one_hot_encoding(customer_feature,
+                                                              self.features_depth[-customer_feature_len:])
         return {
-                   'product_input': product_feature,
-                   'customer_input': customer_feature,
+                   'product_input': product_one_hot_vector,
+                   'customer_input': customer_one_hot_vector,
                }, label
         # return  [product_feature, customer_feature]
+
+    @staticmethod
+    def _make_one_hot_encoding(feature, features_depth):
+        one_hot_vectors_list = []
+        for index in range(len(features_depth)):
+            per_feature = tf.gather(feature, indices=[index], axis=0)
+            one_hot_vector_per_feature = tf.one_hot(tf.cast(per_feature, dtype=tf.int32), features_depth[index])
+            one_hot_vectors_list.append(one_hot_vector_per_feature)
+        return tf.concat(one_hot_vectors_list, axis=-1)
 
     @staticmethod
     def transform_column_to_cat(df, col_name):
